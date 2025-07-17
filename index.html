@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#333333" />
+  <title>Gestión de Servicios – Eddycel</title>
+  <link rel="stylesheet" href="styles/main.css" />
+  <link rel="manifest" href="manifest.json" />
+
+</head>
+<body>
+  <header>
+    <h1>Taller Eddycel</h1>
+    <p>Registro y resumen de servicios del día</p>
+  </header>
+
+  <main>
+    <section id="menu-servicios">
+      <h2>Selecciona un servicio</h2>
+      <div class="categoria">
+        <button class="servicio-btn">Instalar aplicación</button>
+        <button class="servicio-btn">Protector de pantalla</button>
+        <button class="servicio-btn">Cambio de pantalla</button>
+        <button class="servicio-btn">Puerto de carga</button>
+        <button class="servicio-btn">Venta de teléfono</button>
+        <button class="servicio-btn">Servicio personalizado</button>
+      </div>
+    </section>
+
+    <section id="resumen-servicios">
+      <h2>Resumen del Día</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Servicio</th>
+            <th>CUP</th>
+            <th>Cliente</th>
+            <th>USD</th>
+            <th>Transferencia</th>
+            <th>Eliminar</th>
+          </tr>
+        </thead>
+        <tbody id="tabla-servicios"></tbody>
+      </table>
+
+      <div id="totales-detallados">
+        <p><strong>Efectivo (CUP):</strong> <span id="total-efectivo-cup">0</span></p>
+        <p><strong>Transferencia (CUP):</strong> <span id="total-transferencia-cup">0</span></p>
+        <p><strong>Transferencia (USD):</strong> <span id="total-transferencia-usd">0</span></p>
+        <p><strong>Total (USD):</strong> <span id="total-usd">0</span></p>
+        <p><strong>Total (CUP):</strong> <span id="valor-total">0</span></p>
+      </div>
+    </section>
+
+    <!-- Modal -->
+    <div id="modal-edicion" class="modal">
+      <div class="modal-contenido">
+        <h3>Editar Servicio</h3>
+        <label>Cliente:</label>
+        <input type="text" id="cliente-modal" />
+        <label>Precio (CUP):</label>
+        <input type="number" id="precio-modal" />
+        <label>Precio (USD):</label>
+        <input type="number" id="precio-usd" value="0" />
+        <label><input type="checkbox" id="checkbox-transferencia" /> Transferencia</label>
+        <button id="guardar-edicion">Guardar</button>
+        <button id="cerrar-modal">Cancelar</button>
+      </div>
+    </div>
+  </main>
+
+  <script src="scripts/app.js"></script>
+</body>
+</html>
