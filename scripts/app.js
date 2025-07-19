@@ -81,6 +81,7 @@ function actualizarTotal() {
   let totalTransferenciaCUP = 0;
   let totalTransferenciaUSD = 0;
   let totalEfectivoCUP = 0;
+  let totalEfectivoUSD = 0;
 
   serviciosDelDia.forEach((item) => {
     totalCUP += item.precio;
@@ -91,6 +92,7 @@ function actualizarTotal() {
       totalTransferenciaUSD += item.usd;
     } else {
       totalEfectivoCUP += item.precio;
+      totalEfectivoUSD += item.usd;
     }
   });
 
@@ -99,6 +101,8 @@ function actualizarTotal() {
   document.getElementById("total-transferencia-cup").textContent = totalTransferenciaCUP;
   document.getElementById("total-transferencia-usd").textContent = totalTransferenciaUSD;
   document.getElementById("total-usd").textContent = totalUSD;
+  document.getElementById("total-efectivo-usd").textContent = totalEfectivoUSD;
+
 }
 
 function definirPrecio(nombre) {
