@@ -1,0 +1,17 @@
+Modal sin Campo variable para USD
+
+    <!-- Modal -->
+    <div id="modal-edicion" class="modal">
+      <div class="modal-contenido">
+        <h3>Editar Servicio</h3>
+        <label>Cliente:</label>
+        <input type="text" id="cliente-modal" />
+        <label>Precio (CUP):</label>
+        <input type="number" id="precio-modal" />
+        <label>Precio (USD):</label>
+        <input type="number" id="precio-usd" value="0" />
+        <label><input type="checkbox" id="checkbox-transferencia" /> Transferencia</label>
+        <button id="guardar-edicion">Guardar</button>
+        <button id="cerrar-modal">Cancelar</button>
+      </div>
+    </div>

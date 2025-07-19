@@ -36,7 +36,7 @@
             <th>Servicio</th>
             <th>CUP</th>
             <th>Cliente</th>
-            <th>USD</th>
+            <th>Divisas</th>
             <th>Transferencia</th>
             <th>Eliminar</th>
           </tr>
@@ -47,10 +47,17 @@
       <div id="totales-detallados">
         <p><strong>Efectivo (CUP):</strong> <span id="total-efectivo-cup">0</span></p>
         <p><strong>Transferencia (CUP):</strong> <span id="total-transferencia-cup">0</span></p>
+        <p><strong>Total (CUP):</strong> <span id="valor-total">0</span></p>
         <p><strong>Efectivo (USD):</strong> <span id="total-efectivo-usd">0</span></p>
         <p><strong>Transferencia (USD):</strong> <span id="total-transferencia-usd">0</span></p>
         <p><strong>Total (USD):</strong> <span id="total-usd">0</span></p>
-        <p><strong>Total (CUP):</strong> <span id="valor-total">0</span></p>
+        <p><strong>Efectivo (EUR):</strong> <span id="total-efectivo-eur">0</span></p>
+        <p><strong>Transferencia (EUR):</strong> <span id="total-transferencia-eur">0</span></p>
+        <p><strong>Total (EUR):</strong> <span id="total-eur">0</span></p>
+        <p><strong>Efectivo (CAD):</strong> <span id="total-efectivo-cad">0</span></p>
+        <p><strong>Transferencia (CAD):</strong> <span id="total-transferencia-cad">0</span></p>
+        <p><strong>Total (CAD):</strong> <span id="total-cad">0</span></p>
+
       </div>
     </section>
 
@@ -62,8 +69,12 @@
         <input type="text" id="cliente-modal" />
         <label>Precio (CUP):</label>
         <input type="number" id="precio-modal" />
-        <label>Precio (USD):</label>
-        <input type="number" id="precio-usd" value="0" />
+        <select id="moneda-modal">
+        <option value="USD">USD</option>
+        <option value="EUR">EUR</option>
+        <option value="CAD">CAD</option>
+        </select>
+        <input type="number" id="monto-modal" min="0" step="0.01" />
         <label><input type="checkbox" id="checkbox-transferencia" /> Transferencia</label>
         <button id="guardar-edicion">Guardar</button>
         <button id="cerrar-modal">Cancelar</button>

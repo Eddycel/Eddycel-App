@@ -1,44 +1,54 @@
+// 1. Capturar elementos DOM
 const modal = document.getElementById("modal-edicion");
 const clienteModal = document.getElementById("cliente-modal");
 const precioModal = document.getElementById("precio-modal");
-const precioUSDModal = document.getElementById("precio-usd");
 const checkboxTransferencia = document.getElementById("checkbox-transferencia");
+const monedaModal = document.getElementById("moneda-modal");
+const montoModal = document.getElementById("monto-modal");
 const guardarBtn = document.getElementById("guardar-edicion");
 const cerrarBtn = document.getElementById("cerrar-modal");
-
-let registroTemporal = null;
-const serviciosDelDia = [];
 
 const botones = document.querySelectorAll(".servicio-btn");
 const tablaServicios = document.getElementById("tabla-servicios");
 const totalElemento = document.getElementById("valor-total");
 
+let registroTemporal = null;
+const serviciosDelDia = [];
+
+// 2. Al hacer clic en un botón de servicio, preparar y mostrar modal
 botones.forEach((boton) => {
   boton.addEventListener("click", () => {
     const nombre = boton.textContent;
     const precio = definirPrecio(nombre);
 
+    // Nuevo registro con campos justos
     registroTemporal = {
       servicio: nombre,
       precio,
-      usd: 0,
       cliente: "",
-      transferencia: false
+      transferencia: false,
+      moneda: "USD",
+      montoDivisa: 0
     };
 
+    // Reiniciar valores del modal
     clienteModal.value = "";
     precioModal.value = precio;
-    precioUSDModal.value = 0;
+    monedaModal.value = "USD";
+    montoModal.value = 0;
     checkboxTransferencia.checked = false;
+
     modal.style.display = "flex";
   });
 });
 
+// 3. Guardar edición al pulsar “Guardar”
 guardarBtn.addEventListener("click", () => {
-  registroTemporal.cliente = clienteModal.value || "—";
-  registroTemporal.precio = parseInt(precioModal.value) || 0;
-  registroTemporal.usd = parseFloat(precioUSDModal.value) || 0;
+  registroTemporal.cliente = clienteModal.value.trim() || "—";
+  registroTemporal.precio = parseFloat(precioModal.value) || 0;
   registroTemporal.transferencia = checkboxTransferencia.checked;
+  registroTemporal.moneda = monedaModal.value;
+  registroTemporal.montoDivisa = parseFloat(montoModal.value) || 0;
 
   serviciosDelDia.push(registroTemporal);
   actualizarTabla();
@@ -46,65 +56,98 @@ guardarBtn.addEventListener("click", () => {
   modal.style.display = "none";
 });
 
+// 4. Cerrar modal sin guardar
 cerrarBtn.addEventListener("click", () => {
   modal.style.display = "none";
 });
 
+// 5. Renderizar la tabla de servicios
 function actualizarTabla() {
   tablaServicios.innerHTML = "";
-  serviciosDelDia.forEach((servicio, index) => {
+  serviciosDelDia.forEach((s, i) => {
     const fila = document.createElement("tr");
     fila.innerHTML = `
-      <td>${servicio.servicio}</td>
-      <td>${servicio.precio}</td>
-      <td>${servicio.cliente}</td>
-      <td>${servicio.usd}</td>
-      <td>${servicio.transferencia ? "Sí" : "No"}</td>
-      <td><button class="eliminar-btn" data-index="${index}">❌</button></td>
+      <td>${s.servicio}</td>
+      <td>${s.precio.toFixed(2)}</td>
+      <td>${s.cliente}</td>
+      <td>${s.montoDivisa.toFixed(2)} ${s.moneda}</td>
+      <td>${s.transferencia ? "Sí" : "No"}</td>
+      <td><button class="eliminar-btn" data-index="${i}">❌</button></td>
     `;
     tablaServicios.appendChild(fila);
   });
 }
 
+// 6. Eliminar un servicio
 tablaServicios.addEventListener("click", (e) => {
   if (e.target.classList.contains("eliminar-btn")) {
-    const index = parseInt(e.target.dataset.index);
+    const index = parseInt(e.target.dataset.index, 10);
     serviciosDelDia.splice(index, 1);
     actualizarTabla();
     actualizarTotal();
   }
 });
 
+// 7. Calcular totales por moneda y método
 function actualizarTotal() {
-  let totalCUP = 0;
-  let totalUSD = 0;
-  let totalTransferenciaCUP = 0;
-  let totalTransferenciaUSD = 0;
-  let totalEfectivoCUP = 0;
-  let totalEfectivoUSD = 0;
+  // 1. Acumuladores iniciales
+  let efectivoCUP = 0, transferenciaCUP = 0;
+  let efectivoUSD = 0, transferenciaUSD = 0;
+  let efectivoEUR = 0, transferenciaEUR = 0;
+  let efectivoCAD = 0, transferenciaCAD = 0;
 
-  serviciosDelDia.forEach((item) => {
-    totalCUP += item.precio;
-    totalUSD += item.usd;
+  // 2. Sumamos en cada iteración
+  serviciosDelDia.forEach(item => {
+    // CUP
+    if (item.transferencia) transferenciaCUP += item.precio;
+    else efectivoCUP += item.precio;
 
-    if (item.transferencia) {
-      totalTransferenciaCUP += item.precio;
-      totalTransferenciaUSD += item.usd;
-    } else {
-      totalEfectivoCUP += item.precio;
-      totalEfectivoUSD += item.usd;
+    // Divisa variable
+    switch (item.moneda) {
+      case "USD":
+        item.transferencia
+          ? transferenciaUSD += item.montoDivisa
+          : efectivoUSD += item.montoDivisa;
+        break;
+      case "EUR":
+        item.transferencia
+          ? transferenciaEUR += item.montoDivisa
+          : efectivoEUR += item.montoDivisa;
+        break;
+      case "CAD":
+        item.transferencia
+          ? transferenciaCAD += item.montoDivisa
+          : efectivoCAD += item.montoDivisa;
+        break;
     }
   });
 
-  totalElemento.textContent = totalCUP;
-  document.getElementById("total-efectivo-cup").textContent = totalEfectivoCUP;
-  document.getElementById("total-transferencia-cup").textContent = totalTransferenciaCUP;
-  document.getElementById("total-transferencia-usd").textContent = totalTransferenciaUSD;
-  document.getElementById("total-usd").textContent = totalUSD;
-  document.getElementById("total-efectivo-usd").textContent = totalEfectivoUSD;
+  // 3. Calculamos los “totales” de cada moneda
+  let totalCUP = efectivoCUP + transferenciaCUP;
+  let totalUSD = efectivoUSD + transferenciaUSD;
+  let totalEUR = efectivoEUR + transferenciaEUR;
+  let totalCAD = efectivoCAD + transferenciaCAD;
 
+  // 4. Actualizamos el DOM
+  document.getElementById("valor-total").textContent            = totalCUP.toFixed(2);
+  document.getElementById("total-efectivo-cup").textContent     = efectivoCUP.toFixed(2);
+  document.getElementById("total-transferencia-cup").textContent = transferenciaCUP.toFixed(2);
+
+  document.getElementById("total-efectivo-usd").textContent     = efectivoUSD.toFixed(2);
+  document.getElementById("total-transferencia-usd").textContent = transferenciaUSD.toFixed(2);
+  document.getElementById("total-usd").textContent               = totalUSD.toFixed(2);
+
+  document.getElementById("total-efectivo-eur").textContent     = efectivoEUR.toFixed(2);
+  document.getElementById("total-transferencia-eur").textContent = transferenciaEUR.toFixed(2);
+  document.getElementById("total-eur").textContent               = totalEUR.toFixed(2);
+
+  document.getElementById("total-efectivo-cad").textContent     = efectivoCAD.toFixed(2);
+  document.getElementById("total-transferencia-cad").textContent = transferenciaCAD.toFixed(2);
+  document.getElementById("total-cad").textContent               = totalCAD.toFixed(2);
 }
 
+
+// 8. Diccionario de precios
 function definirPrecio(nombre) {
   const precios = {
     "Instalar aplicación": 300,
@@ -129,8 +172,10 @@ function definirPrecio(nombre) {
   return precios[nombre] || 0;
 }
 
+// 9. Service Worker (opcional)
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('service-worker.js')
+  navigator.serviceWorker
+    .register('service-worker.js')
     .then(() => console.log('Service Worker registrado'))
     .catch((err) => console.log('Error al registrar SW', err));
 }
