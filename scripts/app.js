@@ -42,18 +42,33 @@ botones.forEach((boton) => {
   });
 });
 
-// 3. Guardar edición al pulsar “Guardar”
 guardarBtn.addEventListener("click", () => {
   registroTemporal.cliente = clienteModal.value.trim() || "—";
   registroTemporal.precio = parseFloat(precioModal.value) || 0;
   registroTemporal.transferencia = checkboxTransferencia.checked;
   registroTemporal.moneda = monedaModal.value;
   registroTemporal.montoDivisa = parseFloat(montoModal.value) || 0;
+  registroTemporal.fecha = new Date().toISOString().split("T")[0];
 
   serviciosDelDia.push(registroTemporal);
-  actualizarTabla();
-  actualizarTotal();
-  modal.style.display = "none";
+  localStorage.setItem("serviciosGuardados", JSON.stringify(serviciosDelDia));
+
+  fetch("http://localhost:3000/servicios", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(registroTemporal)
+  })
+    .then(res => res.json())
+    .then(data => {
+      console.log("Servicio guardado en backend:", data);
+      actualizarTabla();
+      actualizarTotal();
+      modal.style.display = "none";
+    })
+    .catch(err => {
+      console.error("Error al guardar en el backend:", err);
+      alert("No se pudo guardar el servicio.");
+    });
 });
 
 // 4. Cerrar modal sin guardar
@@ -76,6 +91,23 @@ function actualizarTabla() {
     `;
     tablaServicios.appendChild(fila);
   });
+
+  function actualizarTablaConArray(array) {
+  tablaServicios.innerHTML = "";
+  array.forEach((s, i) => {
+    const fila = document.createElement("tr");
+    fila.innerHTML = `
+      <td>${s.servicio}</td>
+      <td>${s.precio.toFixed(2)}</td>
+      <td>${s.cliente}</td>
+      <td>${s.montoDivisa.toFixed(2)} ${s.moneda}</td>
+      <td>${s.transferencia ? "Sí" : "No"}</td>
+      <td><button class="eliminar-btn" data-index="${i}">❌</button></td>
+    `;
+    tablaServicios.appendChild(fila);
+  });
+}
+
 }
 
 // 6. Eliminar un servicio
@@ -179,3 +211,16 @@ if ('serviceWorker' in navigator) {
     .then(() => console.log('Service Worker registrado'))
     .catch((err) => console.log('Error al registrar SW', err));
 }
+
+const guardados = localStorage.getItem("serviciosGuardados");
+if (guardados) {
+  serviciosDelDia.push(...JSON.parse(guardados));
+}
+
+const selectorFecha = document.getElementById("selector-fecha");
+
+selectorFecha.addEventListener("change", () => {
+  const fechaSeleccionada = selectorFecha.value;
+  const filtrados = serviciosDelDia.filter(s => s.fecha === fechaSeleccionada);
+  actualizarTablaConArray(filtrados); // función alternativa
+});
