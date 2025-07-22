@@ -8,7 +8,11 @@ const path = require("path");
 app.use(express.json());
 
 const cors = require("cors");
-app.use(cors());  // Habilita CORS para *todas* las rutas y orígenes
+app.use(cors({
+  origin: "*",             // Permitir cualquier origen (solo para desarrollo)
+  methods: ["GET", "POST"], // Métodos permitidos
+  allowedHeaders: ["Content-Type"]
+}));
 
 
 // Ruta básica

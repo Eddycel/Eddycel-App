@@ -53,11 +53,12 @@ guardarBtn.addEventListener("click", () => {
   serviciosDelDia.push(registroTemporal);
   localStorage.setItem("serviciosGuardados", JSON.stringify(serviciosDelDia));
 
-  fetch("http://localhost:3000/servicios", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(registroTemporal)
-  })
+fetch("https://eddycel-app.onrender.com", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify(registroTemporal)
+})
+
     .then(res => res.json())
     .then(data => {
       console.log("Servicio guardado en backend:", data);
