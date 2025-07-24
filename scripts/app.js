@@ -43,23 +43,25 @@ botones.forEach((boton) => {
 });
 
 guardarBtn.addEventListener("click", () => {
-  registroTemporal.cliente = clienteModal.value.trim() || "—";
-  registroTemporal.precio = parseFloat(precioModal.value) || 0;
+  registroTemporal.cliente    = clienteModal.value.trim() || "—";
+  registroTemporal.precio     = parseFloat(precioModal.value) || 0;
   registroTemporal.transferencia = checkboxTransferencia.checked;
-  registroTemporal.moneda = monedaModal.value;
+  registroTemporal.moneda     = monedaModal.value;
   registroTemporal.montoDivisa = parseFloat(montoModal.value) || 0;
-  registroTemporal.fecha = new Date().toISOString().split("T")[0];
+  registroTemporal.fecha      = new Date().toISOString().split("T")[0];
 
   serviciosDelDia.push(registroTemporal);
   localStorage.setItem("serviciosGuardados", JSON.stringify(serviciosDelDia));
 
-fetch("https://eddycel-app.onrender.com", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify(registroTemporal)
-})
-
-    .then(res => res.json())
+  fetch("https://eddycel-app.onrender.com/servicios", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(registroTemporal)
+  })
+    .then(res => {
+      if (!res.ok) throw new Error(`Status ${res.status}`);
+      return res.json();
+    })
     .then(data => {
       console.log("Servicio guardado en backend:", data);
       actualizarTabla();
@@ -71,6 +73,7 @@ fetch("https://eddycel-app.onrender.com", {
       alert("No se pudo guardar el servicio.");
     });
 });
+
 
 // 4. Cerrar modal sin guardar
 cerrarBtn.addEventListener("click", () => {
@@ -116,8 +119,10 @@ tablaServicios.addEventListener("click", (e) => {
   if (e.target.classList.contains("eliminar-btn")) {
     const index = parseInt(e.target.dataset.index, 10);
     serviciosDelDia.splice(index, 1);
+    localStorage.setItem("serviciosGuardados", JSON.stringify(serviciosDelDia)); // 🆕
     actualizarTabla();
     actualizarTotal();
+
   }
 });
 
@@ -208,15 +213,17 @@ function definirPrecio(nombre) {
 // 9. Service Worker (opcional)
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker
-    .register('service-worker.js')
+    .register('scripts/service-worker.js')
     .then(() => console.log('Service Worker registrado'))
     .catch((err) => console.log('Error al registrar SW', err));
 }
 
 const guardados = localStorage.getItem("serviciosGuardados");
 if (guardados) {
+  serviciosDelDia.length = 0; // Vacía el array
   serviciosDelDia.push(...JSON.parse(guardados));
 }
+
 
 const selectorFecha = document.getElementById("selector-fecha");
 
