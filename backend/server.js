@@ -55,6 +55,9 @@ app.get("/servicios", (req, res) => {
   const fecha = req.query.fecha;
   let servicios = [];
 
+  const fecha = req.query.fecha;
+  let servicios = [];
+
   if (fs.existsSync(serviciosPath)) {
     servicios = JSON.parse(fs.readFileSync(serviciosPath));
   }
