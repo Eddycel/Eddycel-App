@@ -12,6 +12,8 @@ const botones = document.querySelectorAll(".servicio-btn");
 const tablaServicios = document.getElementById("tabla-servicios");
 const totalElemento = document.getElementById("valor-total");
 
+const id = parseInt(e.target.dataset.id, 10);
+
 let registroTemporal = null;
 const serviciosDelDia = [];
 
@@ -91,7 +93,14 @@ function actualizarTabla() {
       <td>${s.cliente}</td>
       <td>${s.montoDivisa.toFixed(2)} ${s.moneda}</td>
       <td>${s.transferencia ? "Sí" : "No"}</td>
-      <td><button class="eliminar-btn" data-index="${i}">❌</button></td>
+      <td>
+        <button 
+        class="eliminar-btn" 
+        data-index="${i}" 
+        data-id="${s.id}"
+        >❌</button>
+      </td>
+
     `;
     tablaServicios.appendChild(fila);
   });
@@ -118,13 +127,28 @@ function actualizarTabla() {
 tablaServicios.addEventListener("click", (e) => {
   if (e.target.classList.contains("eliminar-btn")) {
     const index = parseInt(e.target.dataset.index, 10);
-    serviciosDelDia.splice(index, 1);
-    localStorage.setItem("serviciosGuardados", JSON.stringify(serviciosDelDia)); // 🆕
-    actualizarTabla();
-    actualizarTotal();
+    const servicio = serviciosDelDia[index];
 
+    // Borra del backend
+    fetch(`https://eddycel-app.onrender.com/servicios/${id}`, {
+     method: "DELETE"
+    })
+
+      .then(res => res.json())
+      .then(data => {
+        console.log("Backend:", data.mensaje);
+        serviciosDelDia.splice(index, 1);
+        localStorage.setItem("serviciosGuardados", JSON.stringify(serviciosDelDia));
+        actualizarTabla();
+        actualizarTotal();
+      })
+      .catch(err => {
+        console.error("Error al eliminar servicio:", err);
+        alert("No se pudo eliminar del backend");
+      });
   }
 });
+
 
 // 7. Calcular totales por moneda y método
 function actualizarTotal() {
@@ -229,6 +253,16 @@ const selectorFecha = document.getElementById("selector-fecha");
 
 selectorFecha.addEventListener("change", () => {
   const fechaSeleccionada = selectorFecha.value;
-  const filtrados = serviciosDelDia.filter(s => s.fecha === fechaSeleccionada);
-  actualizarTablaConArray(filtrados); // función alternativa
+
+  fetch(`https://eddycel-app.onrender.com/servicios?fecha=${fechaSeleccionada}`)
+    .then(res => res.json())
+    .then(data => {
+      actualizarTablaConArray(data); // función que ya tienes
+      console.log("Servicios filtrados por fecha:", data);
+    })
+    .catch(err => {
+      console.error("Error al cargar servicios por fecha:", err);
+      alert("No se pudo consultar el historial.");
+    });
 });
+

@@ -10,7 +10,7 @@ app.use(express.json());
 const cors = require("cors");
 app.use(cors({
   origin: "*",             // Permitir cualquier origen (solo para desarrollo)
-  methods: ["GET", "POST"], // Métodos permitidos
+  methods: ["GET", "POST", "DELETE", "OPTIONS"], // Métodos permitidos
   allowedHeaders: ["Content-Type"]
 }));
 
@@ -51,12 +51,38 @@ app.post("/servicios", (req, res) => {
 
 // Ruta GET para consultar todos los servicios
 app.get("/servicios", (req, res) => {
+  const fecha = req.query.fecha;
+  let servicios = [];
+
   if (fs.existsSync(serviciosPath)) {
     const datos = fs.readFileSync(serviciosPath);
-    res.json(JSON.parse(datos));
-  } else {
-    res.json([]);
+    servicios = JSON.parse(datos);
   }
+
+  // Si hay fecha en la consulta, filtramos
+  if (fecha) {
+    servicios = servicios.filter(s => s.fecha === fecha);
+  }
+
+  res.json(servicios);
+});
+
+app.delete("/servicios/:id", (req, res) => {
+  const idEliminar = parseInt(req.params.id, 10);
+
+  if (!fs.existsSync(serviciosPath)) {
+    return res.status(404).json({ mensaje: "Archivo no encontrado" });
+  }
+
+  const datos = JSON.parse(fs.readFileSync(serviciosPath));
+  const filtrados = datos.filter(s => s.id !== idEliminar);
+
+  if (filtrados.length === datos.length) {
+    return res.status(404).json({ mensaje: "Servicio no encontrado" });
+  }
+
+  fs.writeFileSync(serviciosPath, JSON.stringify(filtrados, null, 2));
+  res.status(200).json({ mensaje: "Servicio eliminado correctamente", id: idEliminar });
 });
 
 // Arrancar servidor
