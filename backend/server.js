@@ -1,65 +1,64 @@
+// server.js
+
 const express = require("express");
-const app = express();
-const PORT = 3000;
-const fs = require("fs");
-const path = require("path");
+const cors    = require("cors");
+const fs      = require("fs");
+const path    = require("path");
 
-// Middleware para leer JSON
+const app  = express();
+const PORT = process.env.PORT || 3000;
+const serviciosPath = path.join(__dirname, "servicios.json");
+
+// 1. Middlewares
 app.use(express.json());
-
-const cors = require("cors");
 app.use(cors({
-  origin: "*",             // Permitir cualquier origen (solo para desarrollo)
-  methods: ["GET", "POST", "DELETE", "OPTIONS"], // Métodos permitidos
+  origin: "*",
+  methods: ["GET", "POST", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type"]
 }));
 
+// 2. Responder preflight para CORS
+app.options("*", (req, res) => {
+  res.sendStatus(204);
+});
 
-// Ruta básica
+// 3. Ruta de prueba
 app.get("/", (req, res) => {
   res.send("¡Servidor Eddycel listo!");
 });
 
-
-// Archivo donde guardamos los servicios
-const serviciosPath = path.join(__dirname, "servicios.json");
-
-// Ruta POST para recibir y guardar servicios
+// 4. POST /servicios → guardar un nuevo servicio
 app.post("/servicios", (req, res) => {
   const nuevoServicio = req.body;
-
-  if (!nuevoServicio || !nuevoServicio.servicio || !nuevoServicio.precio) {
+  if (!nuevoServicio.servicio || nuevoServicio.precio == null) {
     return res.status(400).json({ mensaje: "Datos incompletos" });
   }
 
-  // Leer los servicios actuales
-  let serviciosGuardados = [];
+  let servicios = [];
   if (fs.existsSync(serviciosPath)) {
-    const datos = fs.readFileSync(serviciosPath);
-    serviciosGuardados = JSON.parse(datos);
+    servicios = JSON.parse(fs.readFileSync(serviciosPath));
   }
 
-  // Agregar el nuevo servicio
-  nuevoServicio.id = Date.now(); // ID único temporal
-  serviciosGuardados.push(nuevoServicio);
+  nuevoServicio.id    = Date.now();
+  nuevoServicio.fecha = new Date().toISOString().split("T")[0];
+  servicios.push(nuevoServicio);
 
-  // Guardar nuevamente
-  fs.writeFileSync(serviciosPath, JSON.stringify(serviciosGuardados, null, 2));
-
-  res.status(201).json({ mensaje: "Servicio guardado correctamente", servicio: nuevoServicio });
+  fs.writeFileSync(serviciosPath, JSON.stringify(servicios, null, 2));
+  res.status(201).json({
+    mensaje:  "Servicio guardado correctamente",
+    servicio: nuevoServicio
+  });
 });
 
-// Ruta GET para consultar todos los servicios
+// 5. GET /servicios?fecha=YYYY-MM-DD → obtener servicios (opcionalmente filtrados por fecha)
 app.get("/servicios", (req, res) => {
   const fecha = req.query.fecha;
   let servicios = [];
 
   if (fs.existsSync(serviciosPath)) {
-    const datos = fs.readFileSync(serviciosPath);
-    servicios = JSON.parse(datos);
+    servicios = JSON.parse(fs.readFileSync(serviciosPath));
   }
 
-  // Si hay fecha en la consulta, filtramos
   if (fecha) {
     servicios = servicios.filter(s => s.fecha === fecha);
   }
@@ -67,6 +66,7 @@ app.get("/servicios", (req, res) => {
   res.json(servicios);
 });
 
+// 6. DELETE /servicios/:id → eliminar un servicio por ID
 app.delete("/servicios/:id", (req, res) => {
   const idEliminar = parseInt(req.params.id, 10);
 
@@ -74,18 +74,18 @@ app.delete("/servicios/:id", (req, res) => {
     return res.status(404).json({ mensaje: "Archivo no encontrado" });
   }
 
-  const datos = JSON.parse(fs.readFileSync(serviciosPath));
-  const filtrados = datos.filter(s => s.id !== idEliminar);
+  const servicios = JSON.parse(fs.readFileSync(serviciosPath));
+  const filtrados = servicios.filter(s => s.id !== idEliminar);
 
-  if (filtrados.length === datos.length) {
+  if (filtrados.length === servicios.length) {
     return res.status(404).json({ mensaje: "Servicio no encontrado" });
   }
 
   fs.writeFileSync(serviciosPath, JSON.stringify(filtrados, null, 2));
-  res.status(200).json({ mensaje: "Servicio eliminado correctamente", id: idEliminar });
+  res.json({ mensaje: "Servicio eliminado correctamente", id: idEliminar });
 });
 
-// Arrancar servidor
+// 7. Arrancar servidor
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });
