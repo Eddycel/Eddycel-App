@@ -1,91 +1,117 @@
 // server.js
 
-const express = require("express");
-const cors    = require("cors");
-const fs      = require("fs");
-const path    = require("path");
+const express = require('express');
+const cors    = require('cors');
+const fs      = require('fs').promises;
+const path    = require('path');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
-const serviciosPath = path.join(__dirname, "servicios.json");
+const serviciosPath = path.join(__dirname, 'servicios.json');
 
-// 1. Middlewares
+// ── Asegurar que el archivo exista al arrancar ──
+(async function initFile() {
+  try {
+    await fs.access(serviciosPath);
+  } catch {
+    await fs.writeFile(serviciosPath, '[]', 'utf8');
+  }
+})();
+
+// ── Middlewares ──
 app.use(express.json());
-app.use(cors({
-  origin: "*",
-  methods: ["GET", "POST", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type"]
-}));
+app.use(cors());
 
-// 2. Responder preflight para CORS
-app.options("*", (req, res) => {
-  res.sendStatus(204);
+// ── Helpers para lectura/escritura ──
+async function readServicios() {
+  const data = await fs.readFile(serviciosPath, 'utf8');
+  return JSON.parse(data);
+}
+
+async function writeServicios(servicios) {
+  await fs.writeFile(
+    serviciosPath,
+    JSON.stringify(servicios, null, 2),
+    'utf8'
+  );
+}
+
+// ── Ruta de prueba ──
+app.get('/', (req, res) => {
+  res.send('¡Servidor Eddycel listo!');
 });
 
-// 3. Ruta de prueba
-app.get("/", (req, res) => {
-  res.send("¡Servidor Eddycel listo!");
+// ── POST /servicios → guardar un nuevo servicio ──
+app.post('/servicios', async (req, res) => {
+  const { servicio, precio, cliente = '', moneda = 'CUP', transferencia = false } = req.body;
+
+  if (!servicio || precio == null) {
+    return res.status(400).json({ mensaje: 'Datos incompletos' });
+  }
+
+  try {
+    const servicios = await readServicios();
+    const nuevo = {
+      id: Date.now(),
+      servicio,
+      precio,
+      cliente,
+      moneda,
+      transferencia,
+      fecha: new Date().toISOString().split('T')[0]
+    };
+
+    servicios.push(nuevo);
+    await writeServicios(servicios);
+
+    res.status(201).json({
+      mensaje: 'Servicio guardado correctamente',
+      servicio: nuevo
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ mensaje: 'Error interno del servidor' });
+  }
 });
 
-// 4. POST /servicios → guardar un nuevo servicio
-app.post("/servicios", (req, res) => {
-  const nuevoServicio = req.body;
-  if (!nuevoServicio.servicio || nuevoServicio.precio == null) {
-    return res.status(400).json({ mensaje: "Datos incompletos" });
+// ── GET /servicios?fecha=YYYY-MM-DD → listar servicios ──
+app.get('/servicios', async (req, res) => {
+  const { fecha } = req.query;
+
+  try {
+    let servicios = await readServicios();
+    if (fecha) servicios = servicios.filter(s => s.fecha === fecha);
+    res.json(servicios);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ mensaje: 'Error interno del servidor' });
   }
-
-  let servicios = [];
-  if (fs.existsSync(serviciosPath)) {
-    servicios = JSON.parse(fs.readFileSync(serviciosPath));
-  }
-
-  nuevoServicio.id    = Date.now();
-  nuevoServicio.fecha = new Date().toISOString().split("T")[0];
-  servicios.push(nuevoServicio);
-
-  fs.writeFileSync(serviciosPath, JSON.stringify(servicios, null, 2));
-  res.status(201).json({
-    mensaje:  "Servicio guardado correctamente",
-    servicio: nuevoServicio
-  });
 });
 
-// 5. GET /servicios?fecha=YYYY-MM-DD → obtener servicios (opcionalmente filtrados por fecha)
-app.get("/servicios", (req, res) => {
-  const fecha = req.query.fecha;
-  let servicios = [];
-
-  if (fs.existsSync(serviciosPath)) {
-    servicios = JSON.parse(fs.readFileSync(serviciosPath));
+// ── DELETE /servicios/:id → eliminar servicio por ID ──
+app.delete('/servicios/:id', async (req, res) => {
+  const idEliminar = Number(req.params.id);
+  if (Number.isNaN(idEliminar)) {
+    return res.status(400).json({ mensaje: 'ID inválido' });
   }
 
-  if (fecha) {
-    servicios = servicios.filter(s => s.fecha === fecha);
-  }
+  try {
+    const servicios = await readServicios();
+    const filtrados = servicios.filter(s => s.id !== idEliminar);
 
-  res.json(servicios);
+    if (filtrados.length === servicios.length) {
+      return res.status(404).json({ mensaje: 'Servicio no encontrado' });
+    }
+
+    await writeServicios(filtrados);
+    res.json({ mensaje: 'Servicio eliminado correctamente', id: idEliminar });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ mensaje: 'Error interno del servidor' });
+  }
 });
 
-// 6. DELETE /servicios/:id → eliminar un servicio por ID
-app.delete("/servicios/:id", (req, res) => {
-  const idEliminar = parseInt(req.params.id, 10);
-
-  if (!fs.existsSync(serviciosPath)) {
-    return res.status(404).json({ mensaje: "Archivo no encontrado" });
-  }
-
-  const servicios = JSON.parse(fs.readFileSync(serviciosPath));
-  const filtrados = servicios.filter(s => s.id !== idEliminar);
-
-  if (filtrados.length === servicios.length) {
-    return res.status(404).json({ mensaje: "Servicio no encontrado" });
-  }
-
-  fs.writeFileSync(serviciosPath, JSON.stringify(filtrados, null, 2));
-  res.json({ mensaje: "Servicio eliminado correctamente", id: idEliminar });
-});
-
-// 7. Arrancar servidor
+// ── Arrancar servidor ──
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });

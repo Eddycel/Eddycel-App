@@ -5,9 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#333333" />
   <title>Gestión de Servicios – Eddycel</title>
+
+  <!-- Asegúrate de que la ruta coincida con tu estructura -->
   <link rel="stylesheet" href="styles/main.css" />
   <link rel="manifest" href="manifest.json" />
-
 </head>
 <body>
   <header>
@@ -28,6 +29,8 @@
       </div>
     </section>
 
+    <!-- Label accesible para el selector de fecha -->
+    <label for="selector-fecha">Fecha:</label>
     <input type="date" id="selector-fecha" />
 
     <section id="resumen-servicios">
@@ -59,27 +62,40 @@
         <p><strong>Efectivo (CAD):</strong> <span id="total-efectivo-cad">0</span></p>
         <p><strong>Transferencia (CAD):</strong> <span id="total-transferencia-cad">0</span></p>
         <p><strong>Total (CAD):</strong> <span id="total-cad">0</span></p>
-
       </div>
     </section>
 
-    <!-- Modal -->
-    <div id="modal-edicion" class="modal">
+    <!-- Modal de edición oculto por defecto y con ARIA para accesibilidad -->
+    <div id="modal-edicion" class="modal" aria-hidden="true" role="dialog">
       <div class="modal-contenido">
         <h3>Editar Servicio</h3>
-        <label>Cliente:</label>
-        <input type="text" id="cliente-modal" />
-        <label>Precio (CUP):</label>
-        <input type="number" id="precio-modal" />
-        <select id="moneda-modal">
-        <option value="USD">USD</option>
-        <option value="EUR">EUR</option>
-        <option value="CAD">CAD</option>
-        </select>
-        <input type="number" id="monto-modal" min="0" step="0.01" />
-        <label><input type="checkbox" id="checkbox-transferencia" /> Transferencia</label>
-        <button id="guardar-edicion">Guardar</button>
-        <button id="cerrar-modal">Cancelar</button>
+        <form>
+          <label for="cliente-modal">Cliente:</label>
+          <input type="text" id="cliente-modal" />
+
+          <label for="precio-modal">Precio (CUP):</label>
+          <input type="number" id="precio-modal" />
+
+          <label for="moneda-modal">Moneda:</label>
+          <select id="moneda-modal">
+            <option value="USD">USD</option>
+            <option value="EUR">EUR</option>
+            <option value="CAD">CAD</option>
+          </select>
+
+          <label for="monto-modal">Monto:</label>
+          <input type="number" id="monto-modal" min="0" step="0.01" />
+
+          <label for="checkbox-transferencia">
+            <input type="checkbox" id="checkbox-transferencia" />
+            Transferencia
+          </label>
+
+          <div class="botones-modal">
+            <button type="button" id="guardar-edicion">Guardar</button>
+            <button type="button" id="cerrar-modal">Cancelar</button>
+          </div>
+        </form>
       </div>
     </div>
   </main>
