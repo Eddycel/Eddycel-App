@@ -17,15 +17,18 @@ if (!fs.existsSync(DATA_FILE)) {
 // 2. Middlewares
 app.use(express.json());
 
-app.use(cors({
-  origin: 'http://127.0.0.1:5500',  
-  methods: ['GET','POST','DELETE','OPTIONS'],
-  allowedHeaders: ['Content-Type']
-}));
+// Middleware CORS manual para todas las rutas y métodos
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET,POST,DELETE,OPTIONS'); // <-- sin espacios
+  res.header('Access-Control-Allow-Headers', 'Content-Type');
+  next();
+});
 
-// Responder preflight OPTIONS para **todas** las rutas
+// Responder preflight OPTIONS para todas las rutas
 app.options('*', (req, res) => {
-  res.header('Access-Control-Allow-Methods', 'GET,POST,DELETE,OPTIONS');
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET,POST,DELETE,OPTIONS'); // <-- igual aquí, sin espacios
   res.header('Access-Control-Allow-Headers', 'Content-Type');
   res.sendStatus(204);
 });
