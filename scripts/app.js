@@ -1,9 +1,24 @@
-// app.js
+// scripts/app.js
 
 // 0. Configuración
 const API_BASE = 'https://eddycel-app.onrender.com/servicios';
 
-// 1. Capturar elementos DOM
+// 1. BORRAR SERVICIO
+async function borrarServicio(id) {
+  console.log('⏳ Borrando servicio con ID:', id);
+  const resp = await fetch(`${API_BASE}/${id}`, {
+    method: 'DELETE',
+    mode: 'cors',
+    headers: { 'Content-Type': 'application/json' }
+  });
+  console.log('🚧 Response DELETE status:', resp.status);
+  if (!resp.ok) {
+    throw new Error(`Error al borrar: ${resp.status}`);
+  }
+  return resp.json();
+}
+
+// 2. Capturar elementos DOM
 const modal                 = document.getElementById('modal-edicion');
 const clienteModal          = document.getElementById('cliente-modal');
 const precioModal           = document.getElementById('precio-modal');
@@ -16,11 +31,11 @@ const botones               = document.querySelectorAll('.servicio-btn');
 const tablaServicios        = document.getElementById('tabla-servicios');
 const selectorFecha         = document.getElementById('selector-fecha');
 
-// 2. Estado de la app
+// 3. Estado de la app
 let registroTemporal = null;
 const serviciosDelDia = [];
 
-// 3. Cargar del localStorage al iniciar
+// 4. Cargar del localStorage al iniciar
 ;(function initFromStorage() {
   const guardados = localStorage.getItem('serviciosGuardados');
   if (guardados) {
@@ -30,7 +45,7 @@ const serviciosDelDia = [];
   }
 })();
 
-// 4. Abrir modal al pulsar un servicio
+// 5. Abrir modal al pulsar un servicio
 botones.forEach(boton => {
   boton.addEventListener('click', () => {
     const nombre = boton.textContent.trim();
@@ -55,9 +70,8 @@ botones.forEach(boton => {
   });
 });
 
-// 5. Guardar servicio (POST) y actualizar local
+// 6. Guardar servicio (POST) y actualizar local
 guardarBtn.addEventListener('click', () => {
-  // Validar datos mínimos
   const cliente = clienteModal.value.trim() || '—';
   const precio  = parseFloat(precioModal.value) || 0;
   const monto   = parseFloat(montoModal.value) || 0;
@@ -85,15 +99,9 @@ guardarBtn.addEventListener('click', () => {
       return res.json();
     })
     .then(({ servicio }) => {
-      // Añadimos el campo montoDivisa que no devuelve el backend
       servicio.montoDivisa = registroTemporal.montoDivisa;
-
       serviciosDelDia.push(servicio);
-      localStorage.setItem(
-        'serviciosGuardados',
-        JSON.stringify(serviciosDelDia)
-      );
-
+      localStorage.setItem('serviciosGuardados', JSON.stringify(serviciosDelDia));
       renderTabla(serviciosDelDia);
       actualizarTotales(serviciosDelDia);
       modal.style.display = 'none';
@@ -104,52 +112,43 @@ guardarBtn.addEventListener('click', () => {
     });
 });
 
-// 6. Cerrar modal sin guardar
+// 7. Cerrar modal sin guardar
 cerrarBtn.addEventListener('click', () => {
   modal.style.display = 'none';
 });
 
-// 7. Eliminar servicio (DELETE) por ID
-tablaServicios.addEventListener('click', (e) => {
+// 8. Eliminar servicio (DELETE) por ID usando borrarServicio()
+tablaServicios.addEventListener('click', async (e) => {
   if (!e.target.classList.contains('eliminar-btn')) return;
 
   const id = Number(e.target.dataset.id);
   if (isNaN(id)) return;
 
-  fetch(`${API_BASE}/${id}`, { method: 'DELETE' })
-    .then(res => {
-      if (!res.ok) throw new Error(`Status ${res.status}`);
-      return res.json();
-    })
-    .then(() => {
-      // Eliminamos por ID, no por índice
-      const idx = serviciosDelDia.findIndex(s => s.id === id);
-      if (idx > -1) serviciosDelDia.splice(idx, 1);
+  try {
+    await borrarServicio(id);
 
-      localStorage.setItem(
-        'serviciosGuardados',
-        JSON.stringify(serviciosDelDia)
-      );
+    // Actualizar estado local
+    const idx = serviciosDelDia.findIndex(s => s.id === id);
+    if (idx > -1) serviciosDelDia.splice(idx, 1);
+    localStorage.setItem('serviciosGuardados', JSON.stringify(serviciosDelDia));
 
-      // Si hay filtro activo, re-render con filtrado
-      const fechaFiltro = selectorFecha.value;
-      const lista   = fechaFiltro
-        ? serviciosDelDia.filter(s => s.fecha === fechaFiltro)
-        : serviciosDelDia;
+    // Aplicar posible filtro de fecha
+    const fechaFiltro = selectorFecha.value;
+    const lista = fechaFiltro
+      ? serviciosDelDia.filter(s => s.fecha === fechaFiltro)
+      : serviciosDelDia;
 
-      renderTabla(lista);
-      actualizarTotales(lista);
-    })
-    .catch(err => {
-      console.error('Error al eliminar servicio:', err);
-      alert('No se pudo eliminar el servicio.');
-    });
+    renderTabla(lista);
+    actualizarTotales(lista);
+  } catch (err) {
+    console.error('❌ Error al eliminar servicio:', err);
+    alert('No se pudo eliminar el servicio.');
+  }
 });
 
-// 8. Filtrar por fecha (GET) y actualizar vista
+// 9. Filtrar por fecha (GET) y actualizar vista
 selectorFecha.addEventListener('change', () => {
   const fecha = selectorFecha.value;
-
   fetch(`${API_BASE}?fecha=${fecha}`)
     .then(res => {
       if (!res.ok) throw new Error(`Status ${res.status}`);
@@ -165,7 +164,7 @@ selectorFecha.addEventListener('change', () => {
     });
 });
 
-// 9. Registrar Service Worker (opcional)
+// 10. Registrar Service Worker (opcional)
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker
     .register('scripts/service-worker.js')
@@ -196,7 +195,6 @@ function renderTabla(array) {
 
 // Calcula y muestra totales en pantalla según array dado
 function actualizarTotales(array) {
-  // Inicializar acumuladores
   const totales = {
     CUP: { efectivo: 0, transferencia: 0 },
     USD: { efectivo: 0, transferencia: 0 },
@@ -205,17 +203,14 @@ function actualizarTotales(array) {
   };
 
   array.forEach(item => {
-    // Sumamos en CUP según método
     if (item.transferencia) totales.CUP.transferencia += item.precio;
     else                    totales.CUP.efectivo    += item.precio;
 
-    // Sumamos divisas
     const m = totales[item.moneda];
     if (item.transferencia) m.transferencia += item.montoDivisa;
     else                    m.efectivo    += item.montoDivisa;
   });
 
-  // Actualizar DOM
   document.getElementById('valor-total').textContent            =
     (totales.CUP.efectivo + totales.CUP.transferencia).toFixed(2);
   document.getElementById('total-efectivo-cup').textContent     =
@@ -241,8 +236,7 @@ function definirPrecio(nombre) {
     'Cambio de pantalla': 1000,
     'Puerto de carga': 600,
     'Venta de teléfono': 3000,
-    'Servicio personalizado': 0,
-    // …otros ítems si aplican
+    'Servicio personalizado': 0
   };
   return precios[nombre] || 0;
 }
