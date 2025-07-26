@@ -233,9 +233,9 @@ function definirPrecio(nombre) {
   const precios = {
     'Instalar aplicación': 300,
     'Protector de pantalla': 1500,
-    'Cambio de pantalla': 1000,
-    'Puerto de carga': 600,
-    'Venta de teléfono': 3000,
+    'Cambio de pantalla': 3850,
+    'Puerto de carga micro': 3500,
+    'Venta de teléfono': 0,
     'Servicio personalizado': 0
   };
   return precios[nombre] || 0;
